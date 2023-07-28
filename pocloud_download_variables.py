@@ -136,8 +136,6 @@ def run(args=None):
         logging.error(str(v))
         exit(1)
 
-    session = setup_session("yjiang168", "Magellan.888")
-
     pa.setup_earthdata_login_auth(edl)
     #token = pa.get_token(token_url, 'podaac-subscriber', edl)
     token = pa.get_token(token_url)
