@@ -9,9 +9,6 @@ from os.path import isdir, basename, join, exists
 from urllib.error import HTTPError
 from urllib.request import urlretrieve
 import numpy as np
-import xarray as xr
-from pydap.client import open_url
-from pydap.cas.urs import setup_session
 
 from netCDF4 import Dataset
 
@@ -239,9 +236,6 @@ def run(args=None):
       exit()
 
     f=downloads_data[0][0]
-    #ds = open_url(f, session=session)
-    #print(ds)
-    #print(data_path)
     output_path = join(data_path, 'sample.nc')
     urlretrieve(f, output_path)
     pa.process_file(process_cmd, output_path, args)
@@ -249,7 +243,6 @@ def run(args=None):
     strOpendap = ""
 
     ncin = Dataset(output_path, 'r')
-    #print(ncin.dimensions)
     for v in ncin.variables:
       for i in range(len(avar)):
         if(v == avar[i]):
@@ -260,30 +253,6 @@ def run(args=None):
             strOpendap = strOpendap + '%5B' + '0:1:'+str(int(ncin.variables[v].shape[i])-1)+'%5D'
           strOpendap = strOpendap + ';'
     ncin.close()
-
-    """
-    ds = xr.open_dataset(output_path)
-    for key, value in ds.data_vars.items():
-      print(key, '->', value)
-      #print(value.name)
-      #print(value.dims)
-      ifound = 0
-      for i in range(len(avar)):
-        if(value.name == avar[i]):
-          strOpendap = strOpendap + '/'+avar[i]
-          for key in value.dims:
-            strOpendap = strOpendap + '%5B' + '0:1:'+str(int(ds.dims[key])-1)+'%5D'
-          strOpendap = strOpendap + ';'
-          ifound = 1
-    for iCord in ds.dims:
-      #print(iCord)
-      #print(len(ds[iCord]))
-      #print(ds[iCord].values)
-      if 'lat' in iCord.lower():
-        latValue = ds[iCord].values
-      if 'lon' in iCord.lower():
-        lonValue = ds[iCord].values
-    """
 
     #***********************************************************************************************************
     downloads_all = []
@@ -318,21 +287,9 @@ def run(args=None):
                 output_path = pa.prepare_cycles_output(
                     cycles, data_path, f)
 
-            # decide if we should actually download this file (e.g. we may already have the latest version)
-            """
-            if(exists(output_path) and not args.force and pa.checksum_does_match(output_path, checksums)):
-                logging.info(str(datetime.now()) + " SKIPPED: " + f)
-                skip_cnt += 1
-                continue
-            """
-
-            #print(f+'?dap4.ce='+strOpendap[0:-1])
-            print('Downloading:  '+basename(f))
-            #print(f+'.dap.nc4?dap4.ce='+strOpendap[0:-1])
             urlretrieve(f+'.dap.nc4?dap4.ce='+strOpendap[0:-1], output_path)
-            #urlretrieve(f+'?dap4.ce='+strOpendap[0:-1], output_path)
             pa.process_file(process_cmd, output_path, args)
-            logging.info(str(datetime.now()) + " SUCCESS: " + f)
+            logging.info(str(datetime.now()) + " SUCCESS: " + output_path)
             success_cnt = success_cnt + 1
         except Exception:
             logging.warning(str(datetime.now()) + " FAILURE: " + f, exc_info=True)
